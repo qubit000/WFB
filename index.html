@@ -1,249 +1,2716 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control Center</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/antd/4.24.15/antd.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@reactflow/core@11.10.1/dist/style.css">
     <style>
-        /* Custom styles for sidebar and header */
+        /* Move these styles to the top, after the table styles but before any JavaScript code */
+        /* Favorites section styles - with higher specificity */
+        .workflow-table.ant-table-wrapper .favorites-section,
+        .workflow-table.ant-table-wrapper .favorites-section .ant-table-tbody > tr > td {
+            background-color: #f5fcff !important;
+        }
+        
+        /* Target the specific table cells */
+        .workflow-table .ant-table-tbody > tr.favorites-row > td {
+            background-color: #f5fcff !important;
+        }
+
         .layout {
-            min-height: 100vh;
+            display: flex;
         }
+
         .sider {
-            background-color: #001529;
-            color: white;
-            width: 200px !important;
-            max-width: 200px !important;
-            min-width: 200px !important;
-            flex: 0 0 200px !important;
+            width: 50px;
+            height: 100vh;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             padding: 20px 0;
+            gap: 20px;
+            font-size: 14px;
         }
+
         .sider-link {
-            padding: 10px 24px;
-            display: block;
-            color: rgba(255, 255, 255, 0.65);
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
             transition: color 0.3s;
-            font-size: 16px;
+            white-space: nowrap;
+            transform: rotate(90deg);
+            transform-origin: center;
+            padding: 15px 0;
         }
+
         .sider-link:hover {
             color: #1890ff;
         }
+
         .sider-break {
+            width: 30px;
             height: 1px;
-            background: rgba(255, 255, 255, 0.1);
+            background-color: #333;
             margin: 10px 0;
         }
+
         .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             background: white;
             padding: 0 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid #f0f0f0;
             height: 64px;
-            line-height: 64px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
         }
+
         .header-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: rgba(0, 0, 0, 0.85);
+            font-size: 26px;
+            font-weight: bold;
         }
+
         .header-right {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
+            z-index: 100;
         }
-        /* Additional styles for other components */
-        .search-input {
-            width: 0;
-            overflow: hidden;
-            transition: width 0.3s;
-            margin-left: 8px;
+
+        .content {
+            padding: 24px;
+            background: #f0f2f5;
+            min-height: calc(100vh - 64px);
+            flex-grow: 1;
         }
-        .search-input.expanded {
-            width: 220px;
+
+        .status-groups {
+            display: flex;
+            gap: 10px;
+            background: white;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-radius: 6px;
         }
+
+        .section-header {
+            margin-bottom: 16px;
+        }
+
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-width: 100%;
+        }
+
+        .status-tag {
+            cursor: pointer;
+            padding: 4px 12px;
+            border: none;
+        }
+
+        .status-dials {
+            margin-bottom: 24px;
+        }
+
+        .status-title {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 16px;
+        }
+
+        .s-curves .ant-card {
+            height: 400px;
+            border-radius: 6px;
+        }
+
+        .status-card {
+            text-align: center;
+            padding: 24px;
+            border-radius: 6px;
+        }
+
+        .chart-placeholder {
+            height: 300px;
+            background-color: #f0f2f5;
+            text-align: center;
+            line-height: 300px;
+            border-radius: 6px;
+        }
+
+        .dropdown-button {
+            margin-bottom: 0;
+            border: none;
+        }
+
+        .ant-menu {
+            border-radius: 6px;
+            width: 300px;
+            max-width: calc(100vw - 124px);
+        }
+
+        .ant-segmented {
+            background-color: #f0f2f5;
+            border-radius: 6px;
+            padding: 2px;
+            user-select: none;
+        }
+
+        .ant-segmented-item {
+            min-width: 60px;
+            text-align: center;
+            transition: all 0.3s;
+            color: rgba(0, 0, 0, 0.45);
+            position: relative;
+            z-index: 1;
+        }
+
+        .ant-segmented-item:not(.ant-segmented-item-selected):hover {
+            color: #1890ff !important;
+        }
+
+        .ant-segmented-item-selected {
+            color: #fff !important;
+            background-color: #1890ff !important;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(24, 144, 255, 0.35);
+            z-index: 2;
+            cursor: default;
+        }
+
+        .ant-segmented-thumb {
+            background-color: #1890ff;
+            border-radius: 4px;
+        }
+
+        .ant-segmented:not(.ant-segmented-disabled):hover .ant-segmented-item:not(.ant-segmented-item-selected):not(.ant-segmented-item-disabled):hover {
+            color: #1890ff;
+        }
+
+        .ant-dropdown {
+            margin-left: 50px;
+        }
+
+        .active-letter:hover {
+            background-color: #bae7ff !important;
+            color: #0050b3 !important;
+        }
+
+        .secondary-tabs .ant-tabs-tab {
+            padding: 8px 16px !important;
+            font-size: 14px !important;
+            margin: 0 !important;
+            color: rgba(0, 0, 0, 0.65) !important;
+        }
+
+        .secondary-tabs .ant-tabs-tab-active {
+            font-weight: normal !important;
+            color: #1890ff !important;
+        }
+
+        .secondary-tabs .ant-tabs-ink-bar {
+            height: 3px !important;
+            background: #1890ff !important;
+        }
+
+        .secondary-tabs .ant-tabs-nav {
+            margin-bottom: 0 !important;
+        }
+
+        .secondary-tabs .ant-tabs-tab:hover {
+            color: #1890ff !important;
+        }
+
+        .ant-steps-item {
+            cursor: pointer;
+        }
+
+        .ant-steps-item:hover .ant-steps-item-title {
+            color: #1890ff !important;
+        }
+
+        .ant-steps-item:hover .ant-steps-item-description {
+            color: rgba(0, 0, 0, 0.65) !important;
+        }
+
+        .ant-steps-item:hover .ant-steps-icon {
+            background-color: #1890ff !important;
+        }
+
+        .ant-steps-item-content {
+            transition: opacity 0.3s;
+        }
+
+        .ant-steps-item-content:not(:empty) {
+            margin-top: 8px;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .ant-steps-vertical .ant-steps-item-tail::after {
+            background-color: #e8e8e8 !important;
+        }
+
+        .ant-steps-vertical > .ant-steps-item .ant-steps-item-tail::after {
+            background-color: #e8e8e8 !important;
+        }
+
+        .workflow-steps .ant-steps-item {
+            padding-bottom: 12px;
+            min-height: 28px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .workflow-steps .ant-steps-item-container {
+            padding-left: 16px;
+            display: flex;
+            gap: 0;
+        }
+
+        .workflow-steps .ant-steps-item-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+            line-height: 22px;
+            background: #fff;
+            border-color: #d9d9d9;
+            position: relative;
+            z-index: 1;
+            flex-shrink: 0;
+            margin-top: 3px;
+        }
+
+        .workflow-steps .ant-steps-item-content {
+            margin: 0;
+            padding: 0;
+            min-height: 22px;
+            display: flex;
+            align-items: center;
+        }
+
+        .workflow-steps .ant-steps-item-title {
+            font-size: 14px;
+            line-height: 22px;
+            padding: 0;
+            margin: 0;
+        }
+
+        .workflow-steps .ant-steps-item:hover .ant-steps-item-title {
+            color: #1890ff;
+        }
+
+        .workflow-steps .ant-steps-item-process .ant-steps-item-title {
+            color: #1890ff !important;
+            font-weight: 500;
+        }
+
+        .workflow-steps .ant-steps-item-wait .ant-steps-item-title {
+            color: rgba(0, 0, 0, 0.85) !important;
+            font-weight: normal;
+        }
+
+        .workflow-steps .ant-steps-item-icon .ant-steps-icon span {
+            display: inline-block !important;
+            line-height: inherit !important;
+        }
+
+        .workflow-steps .ant-steps-item:hover .ant-steps-item-icon {
+            background: #1890ff !important;
+            border-color: #1890ff !important;
+        }
+
+        .workflow-steps .ant-steps-item-process .ant-steps-item-icon {
+            background: #1890ff;
+            border-color: #1890ff;
+        }
+
+        .workflow-steps .ant-steps-item-process .ant-steps-item-icon .ant-steps-icon {
+            color: #fff !important;
+        }
+
+        .workflow-steps .ant-steps-item-wait .ant-steps-item-icon .ant-steps-icon {
+            color: rgba(0, 0, 0, 0.45);
+        }
+
+        .workflow-steps .ant-steps-item-icon .ant-steps-icon-dot {
+            display: none !important;  /* Hide the dot icon */
+        }
+
+        .workflow-steps .ant-steps-item-icon .ant-steps-finish-icon {
+            display: none !important;  /* Hide the finish icon */
+        }
+
+        .workflow-steps .ant-steps-item-icon .ant-steps-icon {
+            top: 0;
+            position: relative;
+            width: auto !important;
+            height: auto !important;
+            background: none !important;
+        }
+
+        .workflow-steps .ant-steps-item-icon .ant-steps-icon * {
+            background: none !important;
+        }
+
+        .workflow-steps.ant-steps-vertical > .ant-steps-item .ant-steps-item-tail {
+            display: none !important;
+        }
+
+        .workflow-steps.ant-steps-vertical > .ant-steps-item .ant-steps-item-tail::after {
+            display: none;
+        }
+
+        .workflow-steps .ant-steps-item:last-child .ant-steps-item-tail {
+            display: none;
+        }
+
+        /* Add padding to the step container */
+        .workflow-steps .ant-steps-item {
+            padding-bottom: 28px;  /* Increase spacing between steps */
+            position: relative;  /* Ensure proper positioning context */
+        }
+
+        /* Adjust the step icon position */
+        .workflow-steps .ant-steps-item-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            position: relative;  /* Add this */
+            z-index: 1;  /* Ensure icon stays above line */
+        }
+
+        .workflow-steps .ant-steps-item:last-child .ant-steps-item-tail {
+            display: none;  /* Hide the tail for the last item */
+        }
+
+        /* Add this to ensure proper container spacing */
+        .workflow-steps .ant-steps-item {
+            padding-bottom: 24px;  /* Increase spacing between steps */
+        }
+
+        .workflow-steps .ant-steps-item:last-child {
+            padding-bottom: 0;
+        }
+
+        .workflow-steps .ant-steps-item-content {
+            margin-top: 0;
+            padding-top: 4px;
+        }
+
+        /* Add these styles for consistent header styling across columns */
+        .workflow-steps-header {
+            padding: 12px 16px;
+            background-color: white;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;  /* Match the Control Center header height */
+            box-sizing: border-box;
+        }
+
+        .workflow-steps-header .header-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .workflow-steps-header .edit-icon {
+            opacity: 0;
+            color: rgba(0, 0, 0, 0.45);  /* Start with gray color */
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .workflow-steps-header:hover .edit-icon {
+            opacity: 1;
+            color: #1890ff;  /* Change to blue on hover */
+        }
+
+        /* Add this style for the header titles */
+        .workflow-steps-header .header-title {
+            color: rgba(0, 0, 0, 0.85);
+            font-weight: normal;
+            text-transform: uppercase;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .workflow-steps .ant-steps-item:hover .ant-steps-item-title {
+            color: #1890ff !important;
+            font-weight: 500;
+        }
+
+        /* Add these styles for Operations items */
+        .operations-item {
+            transition: all 0.3s;
+            border-radius: 4px;
+            padding: 4px 8px;
+        }
+
+        .operations-item.hovered,
+        .operations-item:hover,
+        .operations-item.selected {
+            background-color: #1890ff;
+            color: white !important;
+        }
+
+        /* Update badge styles to maintain blue number on white background when hovered */
+        .operations-item.hovered .ant-badge-count,
+        .operations-item:hover .ant-badge-count,
+        .operations-item.selected .ant-badge-count {
+            background-color: white !important;
+            color: #1890ff !important;  /* Keep the number blue */
+        }
+
+        /* Keep all other text and icons white when hovered */
+        .operations-item.hovered *:not(.ant-badge-count),
+        .operations-item:hover *:not(.ant-badge-count),
+        .operations-item.selected *:not(.ant-badge-count) {
+            color: white !important;
+        }
+
+        .operations-item {
+            position: relative;
+        }
+
+        .operations-item:hover .drag-handle {
+            display: block !important;
+        }
+
+        .drag-handle {
+            transition: color 0.3s;
+        }
+
+        .drag-handle:hover {
+            color: #1890ff !important;
+        }
+
+        .plus-icon {
+            color: rgba(0, 0, 0, 0.15) !important; /* Changed to very light gray */
+            transition: color 0.3s;
+            cursor: pointer;
+            font-size: 24px;
+        }
+
+        .plus-icon:hover {
+            color: #1890ff !important;
+        }
+
+        .ant-tabs-ink-bar {
+            display: none !important; /* Hide the blue underline */
+        }
+
+        .search-icon:hover {
+            color: #1890ff !important;
+        }
+
         .search-wrapper {
             display: flex;
             align-items: center;
         }
-        /* A-Z overlay styles */
-        .az-overlay {
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+        .search-input {
+            width: 0;
+            opacity: 0;
+            transition: all 0.3s;
+            margin-left: 8px;
         }
-        .workflow-table-header {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background: white;
+
+        .search-input.expanded {
+            width: 200px;
+            opacity: 1;
         }
-        .custom-scrollbar {
-            scrollbar-width: thin;
-            scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+
+        .resize-textarea .ant-input {
+            resize: both !important;
+            min-height: 32px;
+            overflow: auto;
         }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
+
+        /* Add these new styles */
+        .inactive-column {
+            opacity: 0.35;
+            pointer-events: none;
+            position: relative;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
+
+        .inactive-column::after {
+            content: '';
+            position: absolute;
+            top: 64px; /* Height of the header */
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.5);
+            z-index: 1;
+        }
+
+        .active-column {
+            opacity: 1;
+            pointer-events: auto;
+            transition: opacity 0.3s;
+        }
+
+        .active-column::after {
+            display: none;
+        }
+
+        /* Add new style for the header to ensure it stays black */
+        .workflow-steps-header .header-title {
+            opacity: 1 !important;
+            color: rgba(0, 0, 0, 0.85) !important;
+            pointer-events: none;
+        }
+
+        /* Add these CSS styles */
+        .add-workflow-item:hover .plus-icon {
+            color: #1890ff !important;
+        }
+
+        .add-workflow-item:hover {
+            color: #1890ff;
+        }
+
+        .ant-menu-item:hover .add-workflow-item .plus-icon {
+            color: #1890ff !important;
+        }
+
+        /* For workflow builder A-Z letters */
+        .sider-link[data-letter]:hover::after {
+            content: attr(data-letter);
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        /* For control center status menu A-Z letters */
+        .status-tag[data-letter]:hover::after {
+            content: attr(data-letter);
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        /* Add this CSS rule to prevent text selection during drag */
+        .action-item {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        /* Add styles for the drag ghost */
+        .sortable-ghost {
+            opacity: 0.4;
+            background-color: #f5f5f5;
+        }
+
+        /* Add styles for the drag chosen item */
+        .sortable-chosen {
+            background-color: #f5fcff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            margin: 8px 0 !important;
+            transform: scale(1.005);    /* Even more subtle scale */
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Add styles for the drop indicator line */
+        .drop-indicator {
+            height: 2px;
+            background-color: #1890ff;
+            position: absolute;
+            left: 0;
+            right: 0;
+            transform: scaleX(0.98);
+            opacity: 0;
+            transition: opacity 0.12s cubic-bezier(0.4, 0, 0.2, 1), transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .drop-indicator.show-above {
+            top: -1px;
+            opacity: 1;
+        }
+
+        .drop-indicator.show-below {
+            bottom: -1px;
+            opacity: 1;
+        }
+
+        /* Add transition for smooth spacing changes */
+        .action-item {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: 0;
+            position: relative;  /* For positioning the drop indicator */
+        }
+
+        /* Add space above item being dragged over */
+        .sortable-drag-up {
+            margin-top: 8px !important;
+            transition: margin 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Add space below item being dragged over */
+        .sortable-drag-down {
+            margin-bottom: 8px !important;
+            transition: margin 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Add these styles */
+        .operations-item {
+            transition: all 0.3s;
+            border-radius: 4px;
+            padding: 4px 8px;
+        }
+
+        .operations-item.hovered,
+        .operations-item:hover,
+        .operations-item.selected {
+            background-color: #1890ff;
+            color: white !important;
+        }
+
+        /* Update badge styles to maintain blue number on white background when hovered */
+        .operations-item.hovered .ant-badge-count,
+        .operations-item:hover .ant-badge-count,
+        .operations-item.selected .ant-badge-count {
+            background-color: white !important;
+            color: #1890ff !important;  /* Keep the number blue */
+        }
+
+        /* Keep all other text and icons white when hovered */
+        .operations-item.hovered *:not(.ant-badge-count),
+        .operations-item:hover *:not(.ant-badge-count),
+        .operations-item.selected *:not(.ant-badge-count) {
+            color: white !important;
+        }
+
+        /* Don't apply hover effects to the plus icon container */
+        .plus-icon-container:hover {
+            background-color: #f5fcff !important; /* Changed from transparent */
+        }
+
+        .plus-icon-container:hover .anticon {
+            color: #1890ff !important;
+            opacity: 1;
+        }
+
+        /* Update the styles for the CircleFilled icon numbers */
+        .operations-item.hovered .anticon-plus-circle > span,
+        .operations-item:hover .anticon-plus-circle > span,
+        .operations-item.selected .anticon-plus-circle > span,
+        .operations-item.hovered .anticon > span,
+        .operations-item:hover .anticon > span,
+        .operations-item.selected .anticon > span {
+            background-color: white !important;
+            color: #1890ff !important;
+        }
+
+        /* Keep the CircleFilled icon itself white */
+        .operations-item.hovered .anticon-plus-circle,
+        .operations-item:hover .anticon-plus-circle,
+        .operations-item.selected .anticon-plus-circle {
+            color: white !important;
+        }
+
+        /* Don't apply these styles to the plus icon container */
+        .plus-icon-container .anticon-plus-circle > span,
+        .plus-icon-container:hover .anticon-plus-circle > span,
+        .plus-icon-container.hovered .anticon-plus-circle > span {
+            background-color: transparent !important;
+            color: rgba(0, 0, 0, 0.45) !important;
+        }
+
+        /* Update these styles for the badge in operations items */
+        .operations-item .ant-badge-count {
+            background-color: rgba(0, 0, 0, 0.35);
+            color: white;
+            box-shadow: none !important;
+            border: none !important;
+            transition: all 0.3s;
+        }
+
+        .operations-item:hover .ant-badge-count,
+        .operations-item.selected .ant-badge-count,
+        .operations-item.hovered .ant-badge-count {  /* Add .hovered class */
+            background-color: white !important;
+            color: #1890ff !important;
+            box-shadow: none !important;
+        }
+
+        /* Add specific style for the badge number */
+        .operations-item:hover .ant-badge-count span,
+        .operations-item.selected .ant-badge-count span,
+        .operations-item.hovered .ant-badge-count span {  /* Add .hovered class */
+            color: #1890ff !important;
+        }
+
+        .thin-scrollbar::-webkit-scrollbar {
+            width: 4px;  /* Make it even thinner */
+        }
+        
+        .thin-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);  /* Slightly darker for better visibility */
+            border-radius: 3px;
+        }
+        
+        .thin-scrollbar::-webkit-scrollbar-track {
             background: transparent;
         }
+
+        .thin-scrollbar {
+            scrollbar-width: thin;  /* Firefox */
+        }
+
+        /* Add hover effect for instruction items */
+        .instructions-item:hover .edit-icon {
+            opacity: 1 !important;
+        }
+
+        .instructions-item {
+            position: relative;
+            transition: all 0.3s;
+            border-radius: 4px;
+            padding: 4px 8px;
+        }
+
+        .instructions-item.hoverable:hover,
+        .instructions-item.hoverable.selected {
+            background-color: #1890ff;
+            color: white !important;
+        }
+
+        /* Show edit icon by default in edit mode */
+        .edit-icon {
+            opacity: 1 !important;
+            color: rgba(0, 0, 0, 0.45);
+            transition: color 0.3s;
+        }
+
+        .instructions-item.hoverable:hover .edit-icon,
+        .instructions-item.hoverable.selected .edit-icon {
+            color: white !important;
+        }
+
+        /* Make bullet point white on hover */
+        .instructions-item.hoverable:hover .bullet-point,
+        .instructions-item.hoverable.selected .bullet-point {
+            background-color: white !important;
+        }
+
+        .bullet-point {
+            transition: background-color 0.3s;
+        }
+
+        .dragging .plus-icon-container {
+            display: none !important;
+        }
+        
+        .plus-icon-container {
+            transition: opacity 0.2s ease;
+        }
+
+        /* Add styles for action item wrapper and content */
+        .action-item-wrapper {
+            margin: 0;  // Controls spacing between action items
+            margin: 0;  // Reset margin
+        }
+
+        .action-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0;  // Remove gap between items
+        }
+
+        .action-content .action-item {
+            margin: 0;
+        }
+
+        .plus-icon-container {
+            margin-top: -4px;  // Keep the tight spacing above
+            margin-bottom: -8px;  // Increase negative margin to create tighter spacing below
+        }
+
+        .initial-plus {
+            margin-top: 8px;
+        }
+
+        /* Add these styles for the plus icon container */
+        .plus-icon-container {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .action-item-wrapper:hover + .plus-icon-container,
+        .plus-icon-container:hover {
+            opacity: 1;
+        }
+
+        /* Style for the initial plus icon */
+        .initial-plus-container {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .actions-container:hover > .initial-plus-container {
+            opacity: 1;
+        }
+
+        /* Update the actions container to handle hover states */
+        .actions-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin-top: 0;  // Keep margin at 0
+        }
+
+        /* Add this to your existing styles section */
+        .filter-icon:hover {
+            color: #1890ff !important;
+        }
+
+        /* Update the workflow table header styles */
+        .workflow-table .ant-table-thead > tr > th {
+            background: #fafafa;
+            padding: 0 8px !important;
+            font-weight: 500 !important;
+            font-size: 11px !important;   /* Changed from 10px */
+            color: rgba(0, 0, 0, 0.40) !important;
+            transition: background 0.3s ease;
+            border: none !important;
+            height: 24px !important;
+            line-height: 24px !important;
+            letter-spacing: 0.5px !important;
+        }
+
+        .workflow-table .ant-table-thead > tr > th .ant-table-column-title {
+            font-size: 12px !important;   /* Changed from 11px to 12px */
+            font-weight: 500 !important;
+            color: rgba(0, 0, 0, 0.40) !important;
+            letter-spacing: 0.5px !important;
+        }
+
+        /* Remove cell spacing and borders */
+        .workflow-table .ant-table {
+            border-collapse: collapse !important;
+        }
+
+        .workflow-table .ant-table-thead > tr > th,
+        .workflow-table .ant-table-tbody > tr > td {
+            border-spacing: 0 !important;
+            border: none !important;
+        }
+
+        .workflow-table .ant-table-thead > tr > th:first-child {
+            padding: 0 !important;
+            width: 40px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 24px !important;
+            background: #fafafa !important;
+        }
+
+        .workflow-table .ant-table-thead > tr > th:nth-child(2) {
+            padding-left: 0 !important;
+            background: #fafafa !important;
+        }
+
+        .workflow-table .ant-table-thead > tr {
+            height: 24px !important;
+        }
+
+        /* Update these styles for proper horizontal alignment */
+        .workflow-table .ant-table-thead > tr > th .ant-table-column-title {
+            padding: 0 !important;
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 24px !important;
+        }
+
+        .workflow-table .ant-table-thead > tr > th .ant-table-column-sorter {
+            margin-left: 8px;
+            height: 24px !important;
+            line-height: 24px !important;
+            vertical-align: middle;
+        }
+
+        /* Ensure consistent sizing for all header cells */
+        .workflow-table .ant-table-thead > tr > th.ant-table-cell {
+            height: 24px !important;
+            min-height: 24px !important;
+            max-height: 24px !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            white-space: nowrap;
+            background: #fafafa !important;
+        }
+
+        /* Specific style for Name column */
+        .workflow-table .ant-table-thead > tr > th:nth-child(2) {
+            padding-left: 0 !important;
+        }
+
+        .workflow-table .ant-table-tbody > tr > td:first-child {
+            padding: 8px !important;
+            width: 40px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 32px !important;
+        }
+
+        .workflow-table .ant-table-tbody > tr > td {
+            padding: 0 !important;
+            height: 28px !important;
+            line-height: 28px !important;
+            border-bottom: 1px solid #fafafa !important;
+        }
+
+        .workflow-table .ant-table-tbody > tr:hover > td {
+            background-color: #fafafa;
+        }
+
+        /* Optional: Add transition to the entire row for even smoother effect */
+        .workflow-table .ant-table-tbody > tr {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .workflow-table .ant-table-tbody > tr > td > div {
+            padding: 4px 16px;
+        }
+
+        /* Add styles for the table layout */
+        .workflow-table-header .ant-table-thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: white;
+        }
+
+        .workflow-table-header .ant-table-tbody {
+            display: none;
+        }
+
+        /* Custom scrollbar styles */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 3px;
+        }
+
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background-color: rgba(0, 0, 0, 0.2);
             border-radius: 3px;
         }
-        /* Table styles */
-        .workflow-table .ant-table-thead > tr > th {
-            background: white;
-            font-weight: 500;
-            padding: 8px 16px;
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background-color: transparent;
         }
-        .table-header-row {
-            background-color: #fafafa;
-            font-weight: 500;
+
+        .custom-scrollbar::-webkit-scrollbar-button {
+            height: 0;
+            width: 0;
+            background: transparent;
+            display: none !important;
         }
-        .favorites-row td {
-            background-color: #e6f7ff;
+
+        .custom-scrollbar::-webkit-scrollbar-button:vertical:start,
+        .custom-scrollbar::-webkit-scrollbar-button:vertical:end,
+        .custom-scrollbar::-webkit-scrollbar-button:horizontal:start,
+        .custom-scrollbar::-webkit-scrollbar-button:horizontal:end {
+            display: none !important;
         }
-        /* Action item styles */
-        .operations-item {
-            padding: 8px 12px;
-            border-radius: 4px;
-            transition: all 0.3s;
+
+        .custom-scrollbar {
+            overflow-y: scroll !important;
+            scrollbar-width: thin;
+            -ms-overflow-style: none;
+            scrollbar-gutter: stable;
         }
-        .operations-item:hover, .operations-item.hovered {
-            background-color: #e6f7ff;
+
+        /* Add these styles to the existing CSS section */
+        .workflow-table .ant-table-tbody > tr:hover > td {
+            background: inherit;  /* Use default hover background */
         }
-        .operations-item.selected {
-            background-color: #1890ff;
-            color: white;
+
+        .workflow-table .ant-table-tbody > tr > td {
+            border-bottom: inherit;  /* Use default borders */
+            padding: 8px 16px;  /* Ensure proper padding */
         }
-        .action-item {
-            padding: 8px 12px;
-            border-radius: 4px;
-            transition: all 0.3s;
+
+        /* Add this to ensure the hover effect spans the full width */
+        .workflow-table .ant-table-tbody > tr {
+            cursor: pointer;
         }
-        .action-item:hover, .action-item.hovered {
-            background-color: #e6f7ff;
+
+        /* Add this to ensure proper padding and alignment */
+        .workflow-table .ant-table-tbody > tr > td {
+            padding: 0 !important;  /* Remove default cell padding */
         }
-        .action-item.selected {
-            background-color: #1890ff;
-            color: white;
+
+        /* Style the content wrapper */
+        .workflow-table .ant-table-tbody > tr > td > div {
+            padding: 4px 16px;  /* Add padding to the content wrapper instead */
         }
-        /* Status cards */
-        .status-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            text-align: center;
+
+        /* Add these styles to your CSS section */
+        .workflow-table .ant-table-thead > tr > th[draggable="true"] {
+            cursor: grab;
         }
-        .status-title {
-            margin-top: 16px;
-            font-size: 16px;
-            font-weight: 500;
+
+        .workflow-table .ant-table-thead > tr > th[draggable="true"]:active {
+            cursor: grabbing;
         }
-        /* Main content padding */
-        .content {
-            padding: 24px;
+
+        /* Keep the star column with pointer cursor */
+        .workflow-table .ant-table-thead > tr > th:first-child {
+            cursor: pointer;
         }
-        .status-groups {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        .dropdown-button {
-            min-width: 120px;
-        }
-        .status-dials {
-            margin-bottom: 24px;
-        }
-        .chart-placeholder {
-            height: 200px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+
+        /* Keep only the CSS styles */
+        .hover-background {
+            position: absolute;
+            left: -50px;
+            right: -800px;
+            top: 0;
+            bottom: 0;
             background-color: #f5f5f5;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Update these styles in your CSS section */
+
+        /* Fix hover highlight */
+        .workflow-table .ant-table-tbody > tr:hover > td {
+            background-color: #fafafa !important;
+        }
+
+        /* Fix star alignment - update all star icon containers */
+        .workflow-table .ant-table-thead > tr > th:first-child,
+        .workflow-table .ant-table-tbody > tr > td:first-child {
+            padding: 0 !important;
+            width: 40px !important;
+        }
+
+        /* Add these styles to align table headers and content */
+        .workflow-table .ant-table-thead > tr > th {
+            padding: 8px 16px !important;
+            height: 40px !important;
+            line-height: 40px !important;
+        }
+
+        .workflow-table .ant-table-thead > tr > th:first-child {
+            padding: 8px !important;
+            width: 40px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 32px !important;
+        }
+
+        .workflow-table .ant-table-body {
+            overflow-y: auto !important;
+            max-height: calc(100vh - 300px) !important;
+            scrollbar-width: thin;
+        }
+
+        .workflow-table .ant-table-body::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .workflow-table .ant-table-body::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 3px;
+        }
+
+        .workflow-table .ant-table-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        /* Star visibility rules */
+        .workflow-table .ant-table-tbody > tr .star-icon {
+            color: white;
+            transition: color 0.3s;
+            font-size: 14px;
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Add explicit size for header star icon */
+        .workflow-table .ant-table-thead .anticon {
+            font-size: 14px;
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .workflow-table .ant-table-tbody > tr:hover .star-icon {
+            color: rgba(0, 0, 0, 0.25);
+        }
+
+        .workflow-table .ant-table-tbody > tr .star-icon:hover {
             color: rgba(0, 0, 0, 0.45);
-            border-radius: 4px;
         }
-        /* Edit icons */
-        .edit-icon {
+
+        .workflow-table .ant-table-tbody > tr .star-icon.favorited {
+            color: #1890ff;
+        }
+
+        /* Star column header styles */
+        .workflow-table .ant-table-thead > tr > th:first-child {
+            padding: 0 !important;
+            width: 40px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 24px !important;
+            background: #fafafa !important;
+            border-right: none !important;
+        }
+
+        /* Star cell styles */
+        .workflow-table .ant-table-tbody > tr > td:first-child {
+            padding: 0 !important;
+            width: 40px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 28px !important;
+            border-bottom: none !important;  /* Remove separator for star column */
+        }
+
+        /* Remove any extra spacing */
+        .workflow-table .ant-table-thead > tr > th,
+        .workflow-table .ant-table-tbody > tr > td {
+            margin: 0 !important;
+            border-spacing: 0 !important;
+        }
+
+        /* Star column styles - consolidated */
+        .workflow-table .ant-table-thead > tr > th:first-child,
+        .workflow-table .ant-table-tbody > tr > td:first-child {
+            padding: 0 !important;
+            width: 40px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: none !important;
+        }
+
+        .workflow-table .ant-table-thead > tr > th:first-child {
+            padding: 8px !important;
+        }
+
+        .workflow-table .ant-table-tbody > tr > td:first-child {
+            padding: 8px !important;
+        }
+
+        /* Add these new styles to ensure proper alignment */
+        .workflow-table .ant-table-thead > tr > th .ant-table-column-title {
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        .workflow-table .ant-table-thead > tr > th .ant-table-column-sorter {
+            margin-left: 8px;
+        }
+
+        /* Update sort icon styles */
+        .workflow-table .ant-table-column-sorter {
+            margin-left: 8px;
+            height: 24px !important;
+            line-height: 24px !important;
+            vertical-align: middle;
+        }
+
+        /* Adjust sort icon size */
+        .workflow-table .ant-table-column-sorter .anticon {
+            font-size: 10px !important;  /* Changed from 8px to 10px */
+            color: rgba(0, 0, 0, 0.45);
+        }
+
+        /* Active sort icon color */
+        .workflow-table .ant-table-column-sort .ant-table-column-sorter .anticon {
+            color: #1890ff;
+        }
+
+        /* Adjust sort icon size and spacing */
+        .workflow-table .ant-table-column-sorter .anticon {
+            font-size: 10px !important;  /* Changed from 8px to 10px */
+            color: rgba(0, 0, 0, 0.45);
+        }
+
+        /* Adjust spacing between sort arrows */
+        .workflow-table .ant-table-column-sorter-up,
+        .workflow-table .ant-table-column-sorter-down {
+            height: 10px !important;  /* Changed from 8px to match new font size */
+            line-height: 10px !important;  /* Changed from 8px to match new font size */
+        }
+
+        .workflow-table .ant-table-column-sorter-inner {
+            margin-top: -1px !important;
+        }
+
+        /* Container for both arrows */
+        .workflow-table .ant-table-column-sorter-inner-full {
+            gap: 0 !important;
+        }
+
+        /* Active sort icon color */
+        .workflow-table .ant-table-column-sort .ant-table-column-sorter .anticon {
+            color: #1890ff;
+        }
+
+        /* Hide sort icons by default */
+        .workflow-table .ant-table-thead > tr > th:not(.ant-table-column-sort) .ant-table-column-sorter {
+            visibility: hidden;
+        }
+
+        /* Show sort icons on header hover */
+        .workflow-table .ant-table-thead > tr > th:hover .ant-table-column-sorter {
+            visibility: visible;
+        }
+
+        /* Always show sort icons for actively sorted column */
+        .workflow-table .ant-table-thead > tr > th.ant-table-column-sort .ant-table-column-sorter {
+            visibility: visible;
+        }
+
+        /* Add these styles for the name header hover effect */
+        .name-header .filter-icon {
             opacity: 0;
-            transition: opacity 0.3s;
         }
-        .operations-item:hover .edit-icon,
-        .action-item:hover .edit-icon,
-        .instructions-item:hover .edit-icon {
+
+        .name-header:hover .filter-icon {
             opacity: 1;
         }
-        /* Star icon */
-        .star-icon {
-            color: rgba(0, 0, 0, 0.25);
+
+        /* Update the CSS styles to be more specific */
+        .workflow-table .name-header .filter-icon {
+            opacity: 0;
+        }
+
+        .workflow-table .name-header:hover .filter-icon {
+            opacity: 1;
+        }
+
+        /* Remove the old styles */
+        .name-header .filter-icon {
+            opacity: 0;
+        }
+
+        .name-header:hover .filter-icon {
+            opacity: 1;
+        }
+
+        /* Add these new styles */
+        .workflow-table .filter-icon-wrapper {
+            opacity: 0;
+        }
+
+        .workflow-table .name-header:hover .filter-icon-wrapper {
+            opacity: 1;
+        }
+
+        .workflow-table .filter-icon:hover {
+            color: #1890ff !important;
+        }
+
+        /* Update cursor for sort icons */
+        .workflow-table .ant-table-column-sorter {
+            margin-left: 8px;
+            height: 24px !important;
+            line-height: 24px !important;
+            vertical-align: middle;
+            cursor: pointer !important;  /* Add this line */
+        }
+
+        .workflow-table .ant-table-column-sorter .anticon {
+            font-size: 10px !important;
+            color: rgba(0, 0, 0, 0.45);
+            cursor: pointer !important;  /* Add this line */
+        }
+
+        /* Update cursor styles for sort icons and header */
+        .workflow-table .ant-table-thead > tr > th {
+            cursor: default !important;  /* Default cursor for header cells */
+        }
+
+        .workflow-table .ant-table-column-sorter-wrapper {
+            cursor: pointer !important;  /* Pointer cursor for sort wrapper */
+        }
+
+        .workflow-table .ant-table-column-sorter {
+            cursor: pointer !important;  /* Pointer cursor for sort container */
+        }
+
+        .workflow-table .ant-table-column-sorter .anticon {
+            cursor: pointer !important;  /* Pointer cursor for sort icons */
+        }
+
+        /* Make sort icon cursor styles more specific */
+        .workflow-table .ant-table-thead > tr > th .ant-table-column-sorter-wrapper,
+        .workflow-table .ant-table-thead > tr > th .ant-table-column-sorter-wrapper *,
+        .workflow-table .ant-table-thead > tr > th .ant-table-column-sorter,
+        .workflow-table .ant-table-thead > tr > th .ant-table-column-sorter *,
+        .workflow-table .ant-table-thead > tr > th .ant-table-column-sorter .anticon {
+            cursor: pointer !important;  /* Pointer cursor for sort icons */
+        }
+
+        /* Keep the default cursor for the rest of the header */
+        .workflow-table .ant-table-thead > tr > th {
+            cursor: default !important;
+        }
+
+        /* Remove all previous cursor styles */
+        /* Add new, more specific cursor styles */
+        .workflow-table .ant-table-thead > tr > th .ant-table-column-sorter-wrapper,
+        .workflow-table .ant-table-thead > tr > th .ant-table-column-sorter,
+        .workflow-table .ant-table-thead > tr > th .ant-table-column-sorter-inner,
+        .workflow-table .ant-table-thead > tr > th .ant-table-column-sorter-up,
+        .workflow-table .ant-table-thead > tr > th .ant-table-column-sorter-down,
+        .workflow-table .ant-table-thead > tr > th .ant-table-column-sorter .anticon {
+            cursor: pointer !important;
+            z-index: 1;
+            position: relative;
+        }
+
+        /* Keep default cursor for header cells */
+        .workflow-table .ant-table-thead > tr > th {
+            cursor: default !important;
+        }
+
+        /* Ensure sort icons are clickable */
+        .workflow-table .ant-table-column-sorter-inner {
+            pointer-events: auto !important;
+        }
+
+        /* Add these styles for table rows */
+        .workflow-table .table-row {
+            border-bottom: 1px solid #fafafa;
+        }
+
+        .workflow-table .table-row:last-child {
+            border-bottom: none;
+        }
+
+        /* Update table row styles */
+        .workflow-table .ant-table-tbody > tr > td {
+            padding: 0 !important;
+            height: 28px !important;
+            line-height: 28px !important;
+            border-bottom: 1px solid #fafafa !important;
+        }
+
+        /* Remove border from header rows */
+        .workflow-table .ant-table-tbody > tr[data-row-key^="header-"] > td,
+        .workflow-table .ant-table-tbody > tr[data-row-key^="header-"] > td:first-child {
+            border-bottom: none !important;
+        }
+
+        /* Remove border from divider rows */
+        .workflow-table .ant-table-tbody > tr[data-row-key^="divider-"] > td,
+        .workflow-table .ant-table-tbody > tr[data-row-key^="divider-"] > td:first-child {
+            border-bottom: none !important;
+        }
+
+        /* Update table row styles */
+        .workflow-table .ant-table-tbody > tr > td {
+            padding: 0 !important;
+            height: 28px !important;
+            line-height: 28px !important;
+            border-bottom: 1px solid #fafafa !important;
+        }
+
+        /* Star cell styles */
+        .workflow-table .ant-table-tbody > tr > td:first-child {
+            padding: 0 !important;
+            width: 40px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 28px !important;
+        }
+
+        /* Style the content wrapper */
+        .workflow-table .ant-table-tbody > tr > td > div {
+            padding: 0 8px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Ensure star column aligns with content */
+        .workflow-table .ant-table-tbody > tr > td:first-child > div {
+            padding: 0;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+        }
+
+        /* Update hover styles for table rows */
+        .workflow-table .ant-table-tbody > tr:hover > td {
+            background-color: #fafafa !important;
+        }
+
+        /* Fill gap between star and row on hover */
+        .workflow-table .ant-table-tbody > tr:hover > td:first-child {
+            background-color: #fafafa !important;
+        }
+
+        /* Star cell styles */
+        .workflow-table .ant-table-tbody > tr > td:first-child {
+            padding: 0 !important;
+            width: 40px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 28px !important;
+            border-bottom: none !important;
+        }
+
+        /* Fix hover gap */
+        .workflow-table .ant-table-tbody > tr:hover {
+            background-color: #fafafa !important;
+        }
+        
+        .workflow-table .ant-table-tbody > tr:hover > td {
+            background-color: transparent !important;
+        }
+
+        /* Add styles for favorites rows */
+        .workflow-table .favorites-row > td,
+        .workflow-table .favorites-row > td > div {
+            background-color: #f5fcff !important;
+            border: none !important;
+        }
+
+        /* Hover styles for favorites */
+        .workflow-table .favorites-row:hover > td,
+        .workflow-table .favorites-row:hover > td > div {
+            background-color: #d6f1ff !important;
+        }
+
+        /* Star column in favorites */
+        .workflow-table .favorites-row > td:first-child,
+        .workflow-table .favorites-row > td:first-child > div {
+            background-color: #f5fcff !important;  /* Changed from #ffffff to #f5fcff */
+            padding: 0 !important;
+            width: 40px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 28px !important;
+        }
+
+        /* Star column hover state */
+        .workflow-table .ant-table-tbody > tr.favorites-row:hover > td:first-child,
+        .workflow-table .ant-table-tbody > tr.favorites-row:hover > td:first-child > div {
+            background-color: #d6f1ff !important;  /* Changed from #ffffff to #d6f1ff */
+        }
+
+        /* Name column in favorites */
+        .workflow-table .favorites-row > td:nth-child(2) {
+            padding: 0 !important;
+            background-color: #f5fcff !important;
+            border: none !important;
+        }
+
+        /* Content wrappers in favorites */
+        .workflow-table .favorites-row > td > div {
+            padding: 0 8px !important;
+            height: 28px !important;
+            display: flex !important;
+            align-items: center !important;
+            background-color: #f5fcff !important;
+            width: 100% !important;
+        }
+
+        /* Star column content in favorites */
+        .workflow-table .favorites-row > td:first-child > div {
+            padding: 0 !important;
+            width: 40px !important;
+            justify-content: center !important;
+            background-color: #f5fcff !important;
+        }
+
+        /* Override any hover effects */
+        .workflow-table .favorites-row:hover,
+        .workflow-table .favorites-row:hover > td,
+        .workflow-table .favorites-row:hover > td > div {
+            background-color: #d6f1ff !important;
+        }
+
+        /* Star header column styles */
+        .workflow-table .ant-table-thead > tr > th:first-child {
+            padding: 0 !important;
+            width: 40px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 24px !important;
+            background: #fafafa !important;
+            border-right: none !important;
+        }
+
+        /* Name header column styles */
+        .workflow-table .ant-table-thead > tr > th:nth-child(2) {
+            padding-left: 0 !important;
+            background: #fafafa !important;
+            padding: 0 8px !important;
+        }
+
+        /* Remove any spacing between header cells */
+        .workflow-table .ant-table-thead > tr > th {
+            border-spacing: 0 !important;
+            border-collapse: collapse !important;
+            border: none !important;
+        }
+
+        /* Common column styles */
+        const columnStyles = {
+            star: {
+                flex: '0 0 40px',  // Fixed width for star column
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center'
+            },
+            name: {
+                flex: '1 1 300px',  // Flexible with min width
+                paddingLeft: '8px',  // Consistent left padding
+                display: 'flex',
+                alignItems: 'center'
+            },
+            type: {
+                flex: '0 0 120px',
+                paddingLeft: '8px',
+                display: 'flex',
+                alignItems: 'center'
+            },
+            status: {
+                flex: '0 0 120px',
+                paddingLeft: '8px',
+                display: 'flex',
+                alignItems: 'center'
+            },
+            group: {
+                flex: '0 0 120px',
+                paddingLeft: '8px',
+                display: 'flex',
+                alignItems: 'center'
+            },
+            date: {
+                flex: '0 0 100px',
+                paddingLeft: '8px',
+                display: 'flex',
+                alignItems: 'center'
+            }
+        };
+
+        // Row container style
+        const rowStyle = {
+            display: 'flex',
+            alignItems: 'center',
+            height: '28px',
+            width: '100%',
+            borderBottom: '1px solid #f0f0f0'
+        };
+
+        // Example of a row component
+        const TableRow = ({ data, isFavorite }) => (
+            <div style={rowStyle}>
+                <div style={columnStyles.star}>
+                    {/* Star icon */}
+                </div>
+                <div style={columnStyles.name}>
+                    {data.name}
+                </div>
+                <div style={columnStyles.type}>
+                    {data.type}
+                </div>
+                <div style={columnStyles.status}>
+                    {data.status}
+                </div>
+                <div style={columnStyles.group}>
+                    {data.group}
+                </div>
+                <div style={columnStyles.date}>
+                    {data.created}
+                </div>
+                <div style={columnStyles.date}>
+                    {data.updated}
+                </div>
+            </div>
+        );
+
+        /* ... other styles ... */
+        .favorites-section {
+            background-color: #f5fcff !important;
+        }
+        .favorites-cell {
+            background-color: #f5fcff !important;
+        }
+
+        /* Add single consolidated style for favorites */
+        .workflow-table .favorites-row,
+        .workflow-table .favorites-row > td,
+        .workflow-table .favorites-row > td > div,
+        .workflow-table .favorites-row:hover,
+        .workflow-table .favorites-row:hover > td,
+        .workflow-table .favorites-row:hover > td > div {
+            background-color: #f5fcff !important;
+        }
+
+        /* Then add this CSS style to the existing styles section */
+        .workflow-table .table-header-row td {
+            font-weight: 600 !important;  /* Make it bold */
+            color: rgba(0, 0, 0, 0.85) !important;  /* Ensure good contrast */
+            font-size: 14px !important;
+        }
+
+        /* Plus icon container styles */
+        .plus-icon-container {
+            position: relative;
+            margin-top: -4px;
+            margin-bottom: -8px;
+            padding: 0;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        /* Plus icon styles */
+        .plus-icon-container .anticon-plus {
+            display: none;
+            color: white;
+            font-size: 10px;  /* This is a better size */
+            opacity: 0;
+            transition: opacity 0.2s ease, color 0.2s ease;
+        }
+
+        /* Show plus icon on hover with fade in */
+        .plus-icon-container:hover .anticon-plus {
+            display: block;
+            opacity: 1;
+            color: #1890ff;
+        }
+
+        /* Action item wrapper spacing */
+        .action-item-wrapper {
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Actions container */
+        .actions-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 0;  /* Ensure no extra margin */
+        }
+
+        /* Base styles for favorites rows and all columns */
+        .workflow-table .favorites-row > td,
+        .workflow-table .favorites-row > td > div {
+            background-color: #f5fcff !important;
+            border: none !important;
+        }
+
+        /* Content wrappers in favorites */
+        .workflow-table .favorites-row > td > div {
+            padding: 0 8px !important;
+            height: 28px !important;
+            display: flex !important;
+            align-items: center !important;
+            width: 100% !important;
+        }
+
+        /* Star column specific styles */
+        .workflow-table .favorites-row > td:first-child {
+            padding: 0 !important;
+            width: 40px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 28px !important;
+        }
+
+        /* Hover styles for all columns including gaps */
+        .workflow-table .favorites-row:hover > td,
+        .workflow-table .favorites-row:hover > td > div {
+            background-color: #d6f1ff !important;
+        }
+
+        /* First, override the general table hover styles for favorites */
+        .workflow-table .ant-table-tbody > tr.favorites-row:hover {
+            background-color: #d6f1ff !important;  /* Use our desired hover color */
+        }
+
+        .workflow-table .ant-table-tbody > tr.favorites-row:hover > td {
+            background-color: #d6f1ff !important;  /* Not transparent */
+        }
+
+        /* Then update the existing favorites hover styles */
+        .workflow-table .favorites-row:hover > td,
+        .workflow-table .favorites-row:hover > td > div {
+            background-color: #d6f1ff !important;
+        }
+
+        /* Make sure content wrappers also get the hover color */
+        .workflow-table .favorites-row:hover > td > div {
+            background-color: #d6f1ff !important;
+        }
+
+        /* Base table hover override for favorites */
+        .workflow-table .ant-table-tbody > tr.favorites-row {
+            background-color: #f5fcff !important;
+        }
+
+        /* Hover state for the entire row structure */
+        .workflow-table .ant-table-tbody > tr.favorites-row:hover {
+            background-color: #d6f1ff !important;
+        }
+
+        /* Make sure all cells and their contents change immediately */
+        .workflow-table .ant-table-tbody > tr.favorites-row:hover,
+        .workflow-table .ant-table-tbody > tr.favorites-row:hover > td,
+        .workflow-table .ant-table-tbody > tr.favorites-row:hover > td > div {
+            background-color: #d6f1ff !important;
+            transition: background-color 0s !important;  /* Remove any transition delay */
+        }
+
+        /* Base state for favorites rows */
+        .workflow-table .ant-table-tbody > tr.favorites-row {
+            background-color: #f5fcff !important;
+            transition: none !important;  /* Prevent any transition delays */
+        }
+
+        /* Hover state with immediate color change */
+        .workflow-table .ant-table-tbody > tr.favorites-row:hover {
+            background-color: #d6f1ff !important;
+            transition: none !important;
+        }
+
+        /* Make sure cells reset immediately when leaving row */
+        .workflow-table .ant-table-tbody > tr.favorites-row > td,
+        .workflow-table .ant-table-tbody > tr.favorites-row > td > div {
+            background-color: #f5fcff !important;
+            transition: none !important;
+        }
+
+        /* Immediate hover color change for all parts */
+        .workflow-table .ant-table-tbody > tr.favorites-row:hover,
+        .workflow-table .ant-table-tbody > tr.favorites-row:hover > td,
+        .workflow-table .ant-table-tbody > tr.favorites-row:hover > td > div {
+            background-color: #d6f1ff !important;
+            transition: none !important;
+        }
+
+        /* Header gap between star and name columns */
+        .workflow-table .ant-table-thead > tr > th:first-child,
+        .workflow-table .ant-table-thead > tr > th:nth-child(2) {
+            border-right: none !important;  /* Remove right border */
+        }
+
+        /* Control spacing between header cells */
+        .workflow-table .ant-table-thead > tr > th {
+            padding: 0 !important;
+            background: #fafafa !important;
+        }
+
+        /* Base state - this makes the gap light blue */
+        .workflow-table .ant-table-tbody > tr.favorites-row {
+            background-color: #f5fcff !important;
+            transition: none !important;
+        }
+
+        /* Hover state - this makes the gap darker blue */
+        .workflow-table .ant-table-tbody > tr.favorites-row:hover {
+            background-color: #d6f1ff !important;
+            transition: none !important;
+        }
+
+        /* Make header row background consistent */
+        .workflow-table .ant-table-thead > tr {
+            background: #fafafa !important;  /* Same as header cells */
+        }
+
+        /* Control spacing between header cells */
+        .workflow-table .ant-table-thead > tr > th {
+            padding: 0 !important;
+            background: #fafafa !important;
+        }
+
+        /* Plus icon default and hover states */
+        .workflow-table .ant-table-thead .anticon-plus {
+            color: white !important; /* Default white color */
             transition: color 0.3s;
         }
-        .star-icon:hover {
+
+        .workflow-table .ant-table-thead .anticon-plus:hover,
+        .workflow-table .ant-table-thead th:last-child:hover .anticon-plus,
+        .workflow-table .ant-table-thead .plus-icon-container:hover .anticon-plus {
+            color: #1890ff !important; /* Ant Design blue on hover */
+        }
+
+        /* If the plus icon is in a container, also handle container hover */
+        .workflow-table .ant-table-thead .plus-icon-container:hover .anticon-plus {
+            color: #1890ff !important;
+        }
+
+        /* Plus icon and header cell hover styles */
+        .workflow-table .ant-table-thead .plus-icon-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;  /* Show pointer cursor for entire container */
+        }
+
+        /* Plus icon default state */
+        .workflow-table .ant-table-thead .anticon-plus {
+            color: white !important; /* Default white color */
+            transition: color 0.3s;
+        }
+
+        /* Change plus icon color when hovering anywhere in the header cell */
+        .workflow-table .ant-table-thead th:hover .anticon-plus,
+        .workflow-table .ant-table-thead .plus-icon-container:hover .anticon-plus {
+            color: #1890ff !important;  /* Ant Design blue on hover */
+        }
+
+        /* Plus icon header cell and container styles */
+        .workflow-table .ant-table-thead th:last-child {
+            cursor: pointer;  /* Show pointer cursor for entire header cell */
+        }
+
+        .workflow-table .ant-table-thead .plus-icon-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Plus icon styles */
+        .workflow-table .ant-table-thead .anticon-plus {
+            color: white !important; /* Default white color */
+            transition: color 0.3s;
+        }
+
+        /* Change plus icon color when hovering anywhere in the header cell */
+        .workflow-table .ant-table-thead th:last-child:hover .anticon-plus,
+        .workflow-table .ant-table-thead .plus-icon-container:hover .anticon-plus {
+            color: #1890ff !important;  /* Ant Design blue on hover */
+            display: block;  /* Ensure icon is visible on hover */
+        }
+
+        /* Plus icon header cell styles */
+        .workflow-table .ant-table-thead th:last-child {
+            cursor: pointer;  /* Show pointer for entire cell */
+            padding: 0 !important;
+        }
+
+        /* Container for plus icon */
+        .workflow-table .ant-table-thead .plus-icon-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        /* Plus icon base styles */
+        .workflow-table .ant-table-thead .anticon-plus {
+            color: white !important; /* Default white color */
+            font-size: 10px;
+            transition: color 0.3s;
+        }
+
+        /* Show plus icon and change color on cell hover */
+        .workflow-table .ant-table-thead th:last-child:hover .anticon-plus {
+            color: #1890ff !important;
+            display: block;
+        }
+
+        /* Keep the general plus icon style unchanged */
+        .plus-icon {
+            color: rgba(0, 0, 0, 0.15) !important; /* Changed to very light gray */
+            transition: color 0.3s;
+            cursor: pointer;
+            font-size: 24px;
+        }
+
+        /* Add specific style for action column plus icons */
+        .action-item-wrapper .plus-icon-container .anticon-plus,
+        .actions-container .plus-icon-container .anticon-plus {
+            font-size: 12px !important; /* Changed from 10px */
+            color: white;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.2s ease, color 0.2s ease;
+        }
+
+        /* Show plus icon on hover with fade in */
+        .plus-icon-container:hover .anticon-plus {
+            display: block;
+            opacity: 1;
             color: #1890ff;
         }
-        .star-icon.favorited {
+
+        /* Update the table header row styles to remove hover effect */
+        .workflow-table .table-header-row td {
+            font-weight: 600 !important;
+            color: rgba(0, 0, 0, 0.85) !important;
+            font-size: 14px !important;
+            pointer-events: none !important;  /* Disable hover interactions */
+            background-color: white !important;  /* Keep white background */
+        }
+
+        /* Remove hover effect for header rows */
+        .workflow-table .ant-table-tbody > tr[data-row-key^="header-"]:hover > td {
+            background-color: white !important;  /* Keep white background on hover */
+            cursor: default !important;  /* Remove pointer cursor */
+        }
+
+        /* Ensure the header row itself doesn't get hover effects */
+        .workflow-table .ant-table-tbody > tr[data-row-key^="header-"] {
+            pointer-events: none !important;
+            cursor: default !important;
+        }
+
+        /* Operations item base styles */
+        .operations-item {
+            transition: all 0.3s;
+            border-radius: 4px;
+            padding: 4px 16px;  /* Match actions padding */
+            margin: 4px 0;  /* Add vertical margin to match actions spacing */
+        }
+
+        /* Plus icon container styles for operations */
+        .operations-container .plus-icon-container {
+            position: relative;
+            margin: 0;  /* Reset margins */
+            padding: 0 16px;  /* Match actions padding */
+            height: 20px;  /* Increase height to match actions spacing */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        /* Operations plus icon styles */
+        .operations-container .plus-icon-container .anticon-plus {
+            font-size: 12px !important;
+            color: white;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.2s ease, color 0.2s ease;
+        }
+
+        /* Show plus icon on hover */
+        .operations-container .plus-icon-container:hover .anticon-plus {
+            display: block;
+            opacity: 1;
             color: #1890ff;
         }
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .sider {
-                width: 80px !important;
-                max-width: 80px !important;
-                min-width: 80px !important;
-                flex: 0 0 80px !important;
-            }
-            .sider-link {
-                padding: 10px;
-                text-align: center;
-                font-size: 12px;
-            }
-            .header {
-                padding: 0 12px;
-            }
-            .search-input.expanded {
-                width: 160px;
-            }
+
+        /* Plus icon container spacing */
+        .plus-icon-container {
+            margin-top: -8px;  // Negative margin to reduce space above
+            margin-bottom: -8px;  // Negative margin to reduce space below
+        }
+
+        /* Action item wrapper spacing */
+        .action-item-wrapper {
+            margin: 0;  // No margin around action items
+            padding: 0;
+        }
+
+        /* Actions container */
+        .actions-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0;  // No gap between flex items
+            margin: 0;  // No container margin
+        }
+
+        /* Unified plus icon container styles */
+        .plus-icon-container {
+            position: relative;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        /* Operations specific */
+        .operations-container .plus-icon-container {
+            padding: 0 8px;  /* Only operations needs this padding */
+        }
+
+        /* Actions specific */
+        .actions-container .plus-icon-container {
+            padding: 0 8px;   /* Match action items padding */
+        }
+
+        /* Common plus icon styles */
+        .plus-icon-container .anticon-plus {
+            font-size: 12px !important;
+            color: white;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.2s ease, color 0.2s ease;
+        }
+
+        /* Base plus icon container */
+        .plus-icon-container {
+            position: relative;
+            height: 15px;  /* Reduced from 28px to create tighter spacing */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        /* Operations specific */
+        .operations-container .plus-icon-container {
+            padding: 0 8px;
+            margin-top: -4px;    /* Add negative margin to reduce space */
+            margin-bottom: -4px; /* Add negative margin to reduce space */
+        }
+
+        /* Actions specific */
+        .actions-container .plus-icon-container {
+            padding: 0 8px;
+            margin-top: -4px;    /* Match Operations spacing */
+            margin-bottom: -4px; /* Match Operations spacing */
+        }
+
+        /* Plus icon appearance and behavior */
+        .plus-icon-container .anticon-plus {
+            font-size: 12px !important;
+            color: white;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.2s ease, color 0.2s ease;
+        }
+
+        .plus-icon-container:hover .anticon-plus {
+            display: block;
+            opacity: 1;
+            color: #1890ff;
+        }
+
+        /* Add updated styles */
+        /* Base plus icon container */
+        .plus-icon-container {
+            position: relative;
+            height: 8px;  /* Reduced from 20px to create even tighter spacing */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        /* Operations specific */
+        .operations-container .plus-icon-container {
+            padding: 0 8px;
+            margin-top: -10px;    /* Keep existing margin */
+            margin-bottom: -4px; /* Keep existing margin */
+        }
+
+        /* Actions specific */
+        .actions-container .plus-icon-container {
+            padding: 0 8px;
+            margin-top: -4px;    /* Keep existing margin */
+            margin-bottom: -4px; /* Keep existing margin */
+        }
+
+        /* Remove all duplicate plus-icon-container styles */
+        /* Plus icon container spacing */
+        .plus-icon-container {
+            margin-top: -4px;
+            margin-bottom: -8px;
+            padding: 0;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        /* Unified plus icon container styles */
+        .plus-icon-container {
+            position: relative;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        /* Base plus icon container */
+        .plus-icon-container {
+            position: relative;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        /* Keep only one unified plus-icon-container style block */
+        /* Base plus icon container */
+        .plus-icon-container {
+            position: relative;
+            height: 15px;  /* Set to 15px as requested */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        /* Operations specific */
+        .operations-container .plus-icon-container {
+            padding: 0 16px;
+            margin-top: -8px;
+            margin-bottom: -4px;
+        }
+
+        /* Actions specific */
+        .actions-container .plus-icon-container {
+            padding: 0 8px;
+            margin-top: -4px;
+            margin-bottom: -4px;
+        }
+
+        /* Operations specific */
+        .operations-container .plus-icon-container {
+            padding: 0 16px;
+            margin-top: -8px;    /* This controls space above */
+            margin-bottom: -4px; /* This controls space below */
+        }
+
+        /* Plus icon container spacing */
+        .plus-icon-container {
+            margin-top: -4px;  // This is a duplicate that could be interfering
+            margin-bottom: -8px;  // This is a duplicate with different value
+        }
+
+        /* Base plus icon container */
+        .plus-icon-container {
+            position: relative;
+            height: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+            margin-top: 0;      /* Reset base margins */
+            margin-bottom: 0;   /* Reset base margins */
+        }
+
+        /* Operations specific */
+        .operations-container .plus-icon-container {
+            padding: 0 16px;
+            margin-top: 2px;     /* Small positive margin to create slight spacing */
+            margin-bottom: 2px;  /* Small positive margin to create slight spacing */
+        }
+
+        /* Actions specific */
+        .actions-container .plus-icon-container {
+            padding: 0 8px;
+            margin-top: 2px;     /* Match Operations spacing */
+            margin-bottom: 2px;  /* Match Operations spacing */
+        }
+
+        /* Remove all duplicate plus-icon-container styles and keep only these */
+
+        /* Base plus icon container */
+        .plus-icon-container {
+            position: relative;
+            height: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+            margin: 0;  /* Reset base margins */
+            padding: 0; /* Reset base padding */
+        }
+
+        /* Operations specific */
+        .operations-container .plus-icon-container {
+            padding: 0 16px;
+            margin-top: 2px;     /* Small positive margin to create slight spacing */
+            margin-bottom: 2px;  /* Small positive margin to create slight spacing */
+        }
+
+        /* Actions specific */
+        .actions-container .plus-icon-container {
+            padding: 0 8px;
+            margin-top: 2px;     /* Match Operations spacing */
+            margin-bottom: 2px;  /* Match Operations spacing */
+        }
+
+        /* Plus icon appearance and behavior */
+        .plus-icon-container .anticon-plus {
+            font-size: 12px !important;
+            color: white;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.2s ease, color 0.2s ease;
+        }
+
+        .plus-icon-container:hover .anticon-plus {
+            display: block;
+            opacity: 1;
+            color: #1890ff;
+        }
+
+        /* Add this single consolidated set of styles */
+        /* Base plus icon container */
+        .plus-icon-container {
+            position: relative;
+            height: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+            margin: 0;  /* Reset base margins */
+            padding: 0; /* Reset base padding */
+        }
+
+        /* Operations specific */
+        .operations-container .plus-icon-container {
+            padding: 0 16px;
+            margin-top: 2px;     /* Small positive margin to create slight spacing */
+            margin-bottom: 2px;  /* Small positive margin to create slight spacing */
+        }
+
+        /* Actions specific */
+        .actions-container .plus-icon-container {
+            padding: 0 8px;
+            margin-top: 2px;     /* Match Operations spacing */
+            margin-bottom: 2px;  /* Match Operations spacing */
+        }
+
+        /* Plus icon appearance and behavior */
+        .plus-icon-container .anticon-plus {
+            font-size: 12px !important;
+            color: white;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.2s ease, color 0.2s ease;
+        }
+
+        .plus-icon-container:hover .anticon-plus {
+            display: block;
+            opacity: 1;
+            color: #1890ff;
+        }
+
+        /* Add specific style for the workflow builder plus icon */
+        .workflow-builder-plus {
+            opacity: 1 !important; /* Ensure icon is always visible */
+            display: block !important;
+        }
+
+        /* Update these styles */
+
+        /* Base plus icon styles */
+        .plus-icon {
+            color: rgba(0, 0, 0, 0.25) !important;  /* Updated to match Ant Design default gray */
+            transition: color 0.3s;
+            cursor: pointer;
+            font-size: 24px;
+        }
+
+        .plus-icon:hover {
+            color: #1890ff !important;
+        }
+
+        /* Specific style for the workflow builder plus icon */
+        .workflow-builder-plus {
+            opacity: 1 !important;
+            display: block !important;
+            color: rgba(0, 0, 0, 0.25) !important;  /* Added to ensure correct color */
+        }
+
+        /* Style for the column header plus icon */
+        .column-header-plus {
+            opacity: 1 !important;
+            display: block !important;
+            font-size: 14px !important;
+        }
+
+        /* Update the table header plus icon styles */
+        .workflow-table .ant-table-thead > tr > th .anticon-plus {
+            color: rgba(0, 0, 0, 0.35) !important;
+            opacity: 1 !important;
+            display: block !important;
+        }
+
+        .workflow-table .ant-table-thead > tr > th .anticon-plus:hover {
+            color: #1890ff !important;
+        }
+
+        /* Add view icon hover styles */
+        .view-icon:hover {
+            color: #1890ff !important;
+        }
+
+        /* Add styles for drag handle in edit mode */
+        .operations-item {
+            cursor: grab !important;  /* Default grab cursor */
+        }
+
+        .operations-item:active {
+            cursor: grabbing !important;  /* Change to grabbing when dragging */
+        }
+
+        /* Add styles for the holder icon */
+        .holder-icon {
+            color: rgba(0, 0, 0, 0.45);
+            font-size: 16px;
+            margin-right: 8px;
+            cursor: grab;
+        }
+
+        .holder-icon:active {
+            cursor: grabbing;
+        }
+
+        /* Update edit icon hover styles */
+        .edit-icon {
+            opacity: 0;
+            color: rgba(0, 0, 0, 0.45);
+            transition: all 0.3s;
+        }
+
+        *:hover > .edit-icon {
+            opacity: 1;
+            color: #1890ff;
+        }
+
+        /* Update plus icon default color */
+        .plus-icon {
+            color: rgba(0, 0, 0, 0.25) !important;  /* Updated to match Ant Design default gray */
+            transition: color 0.3s;
+            cursor: pointer;
+            font-size: 24px;
+        }
+
+        /* Update plus icon in plus-icon-container to be light gray by default */
+        .plus-icon-container .anticon-plus {
+            font-size: 12px !important;
+            color: rgba(0, 0, 0, 0.25) !important;  /* Changed to match Ant Design default gray */
+            display: block;
+            opacity: 1;  /* Always visible */
+            transition: all 0.3s;
+        }
+
+        .plus-icon-container:hover .anticon-plus {
+            display: block;
+            opacity: 1;
+            color: #1890ff !important;
+        }
+
+        /* Update specific style for action column plus icons */
+        .action-item-wrapper .plus-icon-container .anticon-plus,
+        .actions-container .plus-icon-container .anticon-plus {
+            font-size: 12px !important;
+            color: rgba(0, 0, 0, 0.25) !important;  /* Changed to match Ant Design default gray */
+            display: block;
+            opacity: 1;  /* Always visible */
+            transition: all 0.3s;
+        }
+
+        /* Update plus icon container styles */
+        .plus-icon-container .anticon-plus {
+            font-size: 12px !important;
+            color: rgba(0, 0, 0, 0.45) !important;  /* Match edit icon's default color */
+            opacity: 1;  /* Always visible */
+            transition: all 0.3s;  /* Match edit icon transition */
+        }
+
+        .plus-icon-container:hover .anticon-plus {
+            color: #1890ff !important;  /* Blue on hover */
+        }
+
+        /* Update specific style for action column plus icons */
+        .action-item-wrapper .plus-icon-container .anticon-plus,
+        .actions-container .plus-icon-container .anticon-plus {
+            font-size: 12px !important;
+            color: rgba(0, 0, 0, 0.45) !important;  /* Match edit icon's default color */
+            opacity: 1;  /* Always visible */
+            transition: all 0.3s;  /* Match edit icon transition */
+        }
+
+        /* Remove any conflicting styles */
+        .plus-icon-container {
+            opacity: 1 !important;  /* Container should also be visible */
+            transition: all 0.3s;
+        }
+
+        /* Base plus icon container styles */
+        .plus-icon-container {
+            opacity: 1 !important;
+            transition: all 0.3s;
+            position: relative;
+            height: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Plus icon styles */
+        .plus-icon-container .anticon-plus {
+            font-size: 12px !important;
+            color: rgba(0, 0, 0, 0.45) !important;  /* Match edit icon's default color */
+            opacity: 1;  /* Always visible */
+            transition: all 0.3s;
+        }
+
+        /* Hover state for plus icons */
+        .plus-icon-container:hover .anticon-plus {
+            color: #1890ff !important;  /* Blue on hover */
+        }
+
+        /* Remove any other conflicting plus icon styles */
+        .action-item-wrapper .plus-icon-container .anticon-plus,
+        .actions-container .plus-icon-container .anticon-plus {
+            font-size: 12px !important;
+            color: rgba(0, 0, 0, 0.25) !important;  /* Changed to match Ant Design default gray */
+            opacity: 1;
+        }
+
+        /* Ensure hover works in actions column */
+        .action-item-wrapper .plus-icon-container:hover .anticon-plus,
+        .actions-container .plus-icon-container:hover .anticon-plus {
+            color: #1890ff !important;
+        }
+
+        /* Base plus icon styles - consolidate all plus icon styles */
+        .plus-icon-container .anticon-plus {
+            font-size: 12px !important;
+            color: rgba(0, 0, 0, 0.08) !important;  /* Changed to 0.08 */
+            opacity: 1;  /* Always visible */
+            transition: all 0.3s;
+        }
+
+        /* Operations and actions column plus icons */
+        .operations-container .plus-icon-container .anticon-plus,
+        .action-item-wrapper .plus-icon-container .anticon-plus,
+        .actions-container .plus-icon-container .anticon-plus {
+            font-size: 12px !important;
+            color: rgba(0, 0, 0, 0.08) !important;  /* Changed to 0.08 */
+            opacity: 1;
+            transition: all 0.3s;
+        }
+
+        /* Hover state for all plus icons */
+        .plus-icon-container:hover .anticon-plus,
+        .operations-container .plus-icon-container:hover .anticon-plus,
+        .action-item-wrapper .plus-icon-container:hover .anticon-plus,
+        .actions-container .plus-icon-container:hover .anticon-plus {
+            color: #1890ff !important;
+        }
+
+        /* Remove any other conflicting plus icon color definitions */
+
+        /* Add these scrollbar styles to the existing style section */
+        .horizontal-scroll-container {
+            overflow-x: auto;
+        }
+
+        .horizontal-scroll-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .horizontal-scroll-container::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        .horizontal-scroll-container::-webkit-scrollbar-track {
+            background-color: #f0f0f0;
+        }
+
+        .view-switcher.ant-segmented {
+          background-color: transparent;
+          padding: 0;
+        }
+
+        .view-switcher.ant-segmented .ant-segmented-item {
+          min-width: 32px;
+          width: 32px;
+          height: 32px;
+          color: rgba(0, 0, 0, 0.45);
+          transition: all 0.3s;
+        }
+
+        .view-switcher.ant-segmented .ant-segmented-item:hover {
+          color: #1890ff;
+        }
+
+        .view-switcher.ant-segmented .ant-segmented-item-selected {
+          background-color: transparent;
+          color: #1890ff;
+          box-shadow: none;
+        }
+
+        .view-switcher.ant-segmented .ant-segmented-item-icon {
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        /* Add these CSS styles */
+        .menu-list-item:hover {
+            background-color: #e8e8e8 !important; /* Darker than default f5f5f5 */
+        }
+
+        /* Add these CSS styles to your existing styles section */
+        .status-menu-scroll-container .ant-menu-item:hover {
+            background-color: #e8e8e8 !important; /* Darker than default f5f5f5 */
+            border-top: 1px solid #e0e0e0 !important;
+            border-bottom: 1px solid #e0e0e0 !important;
+            margin: -1px 0 !important;
+            transition: all 0.2s ease !important;
+        }
+
+        /* Combined hover styles for menu items */
+        .status-menu-scroll-container .ant-menu-item.menu-list-item:hover {
+            background-color: #e8e8e8 !important;
+            border-top: 1px solid #e0e0e0 !important;
+            border-bottom: 1px solid #e0e0e0 !important;
+            margin: -1px 0 !important;
+            transition: all 0.2s ease !important;
+            cursor: pointer !important;
+        }
+
+        /* Single, specific hover style for menu items */
+        .ant-menu .status-menu-scroll-container .ant-menu-item:not(:first-child):hover {
+            background-color: #e8e8e8 !important;
+            border-top: 1px solid #e0e0e0 !important;
+            border-bottom: 1px solid #e0e0e0 !important;
+            margin: -1px 0 !important;
+            transition: all 0.2s ease !important;
+            cursor: pointer !important;
+        }
+
+        /* Single hover style for menu items */
+        .ant-menu .menu-list-item:not(:first-child):hover {
+            background-color: #e8e8e8 !important;
+            border-top: 1px solid #e0e0e0 !important;
+            border-bottom: 1px solid #e0e0e0 !important;
+            margin: -1px 0 !important;
+            cursor: pointer !important;
+        }
+
+        /* Status menu item hover styles */
+        .status-menu-scroll-container .ant-menu-item:not([disabled]):hover {
+            background-color: #e8e8e8 !important;
+            border-top: 1px solid #e0e0e0 !important;
+            border-bottom: 1px solid #e0e0e0 !important;
+            margin: -1px 0 !important;
+            cursor: pointer !important;
+            position: relative !important;
+            z-index: 1 !important;
+        }
+
+        /* Add this single, highly specific style */
+        .ant-menu .status-menu-scroll-container .ant-menu-item:not(:first-child):not([disabled]) {
+            transition: all 0.2s ease;
+        }
+
+        .ant-menu .status-menu-scroll-container .ant-menu-item:not(:first-child):not([disabled]):hover {
+            background-color: #e8e8e8 !important;
+            box-shadow: inset 0 1px 0 #e0e0e0, inset 0 -1px 0 #e0e0e0;
+            cursor: pointer !important;
+        }
+    </style>
+    <style>
+        :root {
+            --primary-color: #1890ff;
+            --hover-color: #bae7ff;
+            --text-color: rgba(0, 0, 0, 0.65);
         }
     </style>
 </head>
 <body>
     <div id="app"></div>
 
-    <!-- Load React and ReactDOM first -->
-    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
-    
-    <!-- Load Ant Design (Core & Icons) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/antd/4.24.15/antd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ant-design-icons/4.7.0/index.umd.min.js"></script>
-
-    <!-- Load other dependencies (React Flow needs React, SortableJS is standalone) -->
-    <script src="https://cdn.jsdelivr.net/npm/@reactflow/core@11.10.1/dist/umd/index.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@reactflow/background@11.3.6/dist/umd/index.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@reactflow/controls@11.2.11/dist/umd/index.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    
-    <!-- Set reactFlowLoaded flag after scripts are loaded -->
-    <script>window.reactFlowLoaded = true;</script>
-    
-    <!-- Load Babel Standalone (Needs to run before the inline script) -->
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/antd@4.24.15/dist/antd.min.js"></script>
+    <script src="https://unpkg.com/@ant-design/icons@4.7.0/dist/index.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
-    <!-- Load your application script (Runs last, uses all libraries) -->
     <script type="text/babel">
-        // Ensure React and ReactDOM are properly imported
-        const { useState, useEffect, useRef, useCallback, memo, forwardRef } = React;
-        const ReactDOM = window.ReactDOM;
-
         // Destructure from window.antd instead
         const { 
             Layout, 
@@ -311,8 +2778,7 @@
             BranchesOutlined,
             BarsOutlined,
             AppstoreOutlined,
-            SwitcherOutlined,
-            NodeIndexOutlined
+            SwitcherOutlined
         } = window.icons;
 
         const { Title } = Typography;
@@ -2019,7 +4485,6 @@
                                         style={{ width: '100%' }}
                                         className="workflow-table"
                                         showHeader={true}
-                                        locale={{ emptyText: ' ' }}
                                         components={{
                                             header: {
                                                 cell: (props) => {
@@ -2067,7 +4532,6 @@
                                             style={{ width: '100%' }}
                                             className="workflow-table"
                                             showHeader={false}
-                                            locale={{ emptyText: ' ' }}
                                             components={{
                                                 body: {
                                                     cell: props => <td {...props} className="favorites-cell" />
@@ -2103,7 +4567,6 @@
                                         }}
                                         className="workflow-table"
                                         showHeader={false}
-                                        locale={{ emptyText: ' ' }}
                                         rowClassName={(record) => {
                                             if (record.isHeader) {
                                                 return 'table-header-row';  // Add this class
@@ -2427,12 +4890,10 @@
                                                                                 trigger={['click']}
                                                                                 visible={operationsMenuVisible === index}
                                                                                 onVisibleChange={(visible) => {
-                                                                                    if (isComponentMounted) { // Add mount check
-                                                                                        if (visible) {
-                                                                                            setOperationsMenuVisible(index);
-                                                                                        } else {
-                                                                                            setOperationsMenuVisible(null);
-                                                                                        }
+                                                                                    if (visible) {
+                                                                                        setOperationsMenuVisible(index);
+                                                                                    } else {
+                                                                                        setOperationsMenuVisible(null);
                                                                                     }
                                                                                 }}
                                                                                 className="plus-icon-container"
@@ -2563,12 +5024,10 @@
                                                                                 onClick={() => setOperationsMenuVisible(null)}
                                                                                 visible={actionsMenuVisible === index}
                                                                                 onVisibleChange={(visible) => {
-                                                                                    if (isComponentMounted) { // Add mount check
-                                                                                        if (visible) {
-                                                                                            setActionsMenuVisible(index);
-                                                                                        } else {
-                                                                                            setActionsMenuVisible(null);
-                                                                                        }
+                                                                                    if (visible) {
+                                                                                        setActionsMenuVisible(index);
+                                                                                    } else {
+                                                                                        setActionsMenuVisible(null);
                                                                                     }
                                                                                 }}
                                                                                 className="plus-icon-container"
@@ -2606,12 +5065,10 @@
                                                                     trigger={['click']}
                                                                     visible={actionsMenuVisible === 'initial'}
                                                                     onVisibleChange={(visible) => {
-                                                                        if (isComponentMounted) { // Add mount check
-                                                                            if (visible) {
-                                                                                setActionsMenuVisible('initial');
-                                                                            } else {
-                                                                                setActionsMenuVisible(null);
-                                                                            }
+                                                                        if (visible) {
+                                                                            setActionsMenuVisible('initial');
+                                                                        } else {
+                                                                            setActionsMenuVisible(null);
                                                                         }
                                                                     }}
                                                                     className={`plus-icon-container ${steps[hoveredStep !== null ? hoveredStep : selectedStep].subSteps.length === 0 ? 'initial-plus-container' : ''}`}
@@ -2841,12 +5298,10 @@
                                                                                     trigger={['click']}
                                                                                     visible={actionsMenuVisible === `${tableIndex}-${subIndex}`}
                                                                                     onVisibleChange={(visible) => {
-                                                                                        if (isComponentMounted) { // Add mount check
-                                                                                            if (visible) {
-                                                                                                setActionsMenuVisible(`${tableIndex}-${subIndex}`);
-                                                                                            } else {
-                                                                                                setActionsMenuVisible(null);
-                                                                                            }
+                                                                                        if (visible) {
+                                                                                            setActionsMenuVisible(`${tableIndex}-${subIndex}`);
+                                                                                        } else {
+                                                                                            setActionsMenuVisible(null);
                                                                                         }
                                                                                     }}
                                                                                     className="plus-icon-container"
@@ -3358,100 +5813,6 @@
             );
         };
 
-        // Remove the top-level extraction
-        const WFBFlow = ({ editMode, showAZOverlay, setShowAZOverlay, searchTerm, setSearchTerm, 
-            isInteractingWithOverlay, setIsInteractingWithOverlay, selectedTags, setSelectedTags }) => {
-            const [isLoaded, setIsLoaded] = React.useState(false);
-            const [retryCount, setRetryCount] = React.useState(0);
-            const maxRetries = 10;
-            
-            React.useEffect(() => {
-                const checkReactFlow = () => {
-                    console.log('Checking React Flow availability...');
-                    if (window.ReactFlow && window.reactFlowLoaded) {
-                        console.log('React Flow is ready!');
-                        setIsLoaded(true);
-                    } else {
-                        console.log('React Flow not ready, retrying...');
-                        if (retryCount < maxRetries) {
-                            setRetryCount(prev => prev + 1);
-                            setTimeout(checkReactFlow, 1000);
-                        } else {
-                            console.error('Failed to load React Flow after maximum retries');
-                        }
-                    }
-                };
-                checkReactFlow();
-                return () => {
-                    setIsLoaded(false);
-                    setRetryCount(0);
-                };
-            }, [retryCount]);
-
-            if (!isLoaded) {
-                console.log('Still loading React Flow...');
-                return <div style={{ padding: '24px' }}>Loading React Flow... {retryCount}/{maxRetries}</div>;
-            }
-
-            console.log('React Flow loaded, rendering diagram...');
-            const { ReactFlow, Background, Controls } = window.ReactFlow;
-            
-            // Define nodes and edges for React Flow
-            const nodes = [
-                {
-                    id: '1',
-                    data: { label: 'Node 1' },
-                    position: { x: 250, y: 5 }
-                },
-                {
-                    id: '2',
-                    data: { label: 'Node 2' },
-                    position: { x: 100, y: 100 }
-                },
-                {
-                    id: '3',
-                    data: { label: 'Node 3' },
-                    position: { x: 400, y: 100 }
-                }
-            ];
-
-            const edges = [
-                { id: 'e1-2', source: '1', target: '2' },
-                { id: 'e1-3', source: '1', target: '3' }
-            ];
-
-            return (
-                <Layout.Content style={{ 
-                    padding: 0, 
-                    backgroundColor: 'white',
-                    position: 'relative',
-                    overflow: 'hidden'
-                }}>
-                    <div style={{
-                        background: 'white',
-                        padding: '24px',
-                        borderRadius: '8px',
-                        minHeight: 'calc(100vh - 64px - 90px - 48px)',
-                        display: 'flex',
-                        flexDirection: 'column'
-                    }}>
-                        <div style={{ width: '100%', height: '800px' }}>
-                            <div style={{ width: '100%', height: '100%' }}>
-                                <ReactFlow 
-                                    nodes={nodes} 
-                                    edges={edges} 
-                                    fitView
-                                >
-                                    <Background />
-                                    <Controls />
-                                </ReactFlow>
-                            </div>
-                        </div>
-                    </div>
-                </Layout.Content>
-            );
-        };
-
         const MainContent = () => {
             const isMounted = React.useRef(true);
             const statusData = [
@@ -3843,28 +6204,10 @@
             // First, add state to control which version is shown
             const [wfbVersion, setWfbVersion] = React.useState('original');
 
-            // Add this near other state declarations in ControlCenter component
-            const [wfbFlowView, setWfbFlowView] = React.useState(false);
-
             // Then update the renderView function to pass the correct variant
             const renderView = () => {
                 switch(currentView) {
                     case 'workflow-builder':
-                        if (wfbFlowView) {
-                            return (
-                                <WFBFlow 
-                                    editMode={workflowBuilderEditMode}
-                                    showAZOverlay={showAZOverlay}
-                                    setShowAZOverlay={setShowAZOverlay}
-                                    searchTerm={searchTerm}
-                                    setSearchTerm={setSearchTerm}
-                                    isInteractingWithOverlay={isInteractingWithOverlay}
-                                    setIsInteractingWithOverlay={setIsInteractingWithOverlay}
-                                    selectedTags={selectedTags}
-                                    setSelectedTags={setSelectedTags}
-                                />
-                            );
-                        }
                         return (
                             <WFBOption1 
                                 editMode={workflowBuilderEditMode}
@@ -3877,7 +6220,7 @@
                                 selectedTags={selectedTags}
                                 setSelectedTags={setSelectedTags}
                                 viewType={wfbView}
-                                variant={wfbVersion}
+                                variant={wfbVersion}  // Use the state variable instead of hardcoded value
                             />
                         );
                     default:
@@ -4297,7 +6640,6 @@
                                                 onClick={() => {
                                                     setWfbView('tile');
                                                     setWfbVersion('variant');
-                                                    setWfbFlowView(false);  // Add this line to turn off flow view
                                                 }}
                                             />
                                         </Tooltip>
@@ -4314,96 +6656,6 @@
                                                 onClick={() => {
                                                     setWfbView('default');
                                                     setWfbVersion('original');
-                                                    setWfbFlowView(false);  // Add this line to turn off flow view
-                                                }}
-                                            />
-                                        </Tooltip>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                        {currentView === 'workflow-builder' && (
-                            <div style={{
-                                position: 'fixed',
-                                right: '24px',
-                                top: '148px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                zIndex: 1,
-                                opacity: showAZOverlay ? 0 : 1,
-                                transition: 'opacity 0.3s',
-                                pointerEvents: showAZOverlay ? 'none' : 'auto',
-                                gap: '16px'  // Add gap between icons
-                            }}>
-                                {/* Add Node Index Icon */}
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '32px',
-                                    height: '32px'
-                                }}>
-                                    <Tooltip title="Node View" placement="left">
-                                        <NodeIndexOutlined 
-                                            style={{ 
-                                                fontSize: '18px',
-                                                color: wfbFlowView ? '#1890ff' : 'rgba(0, 0, 0, 0.45)',
-                                                cursor: wfbFlowView ? 'default' : 'pointer',  // Add this line
-                                                transition: 'color 0.3s',
-                                                opacity: wfbFlowView ? 0.65 : 1  // Add this line
-                                            }}
-                                            className="view-icon"
-                                            onClick={() => {
-                                                if (!wfbFlowView) {  // Add this condition
-                                                    setWfbFlowView(true);
-                                                    setWfbView('default');
-                                                    setWfbVersion('original');
-                                                }
-                                            }}
-                                        />
-                                    </Tooltip>
-                                </div>
-
-                                {/* Existing View Toggle Icon */}
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '32px',
-                                    height: '32px'
-                                }}>
-                                    {wfbView === 'default' ? (
-                                        <Tooltip title="Switch to Tile View" placement="left">
-                                            <UnorderedListOutlined 
-                                                style={{ 
-                                                    fontSize: '18px',
-                                                    color: 'rgba(0, 0, 0, 0.45)',
-                                                    cursor: 'pointer',
-                                                    transition: 'color 0.3s'
-                                                }}
-                                                className="view-icon"
-                                                onClick={() => {
-                                                    setWfbView('tile');
-                                                    setWfbVersion('variant');
-                                                    setWfbFlowView(false);  // Add this line to turn off flow view
-                                                }}
-                                            />
-                                        </Tooltip>
-                                    ) : (
-                                        <Tooltip title="Switch to List View" placement="left">
-                                            <AppstoreOutlined 
-                                                style={{ 
-                                                    fontSize: '18px',
-                                                    color: 'rgba(0, 0, 0, 0.45)',
-                                                    cursor: 'pointer',
-                                                    transition: 'color 0.3s'
-                                                }}
-                                                className="view-icon"
-                                                onClick={() => {
-                                                    setWfbView('default');
-                                                    setWfbVersion('original');
-                                                    setWfbFlowView(false);  // Add this line to turn off flow view
                                                 }}
                                             />
                                         </Tooltip>
